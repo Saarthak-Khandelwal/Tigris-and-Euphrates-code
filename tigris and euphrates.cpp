@@ -27,22 +27,25 @@
 
     // Define class for a tile
     class Tile {
-    public:
-        Tile(std::vector<Resource> res, Kingdom* k, int r, int c)
-            : resources(res), kingdom(k), row(r), col(c) {}
+public:
+    std::vector<Resource> resources;
+    Tile(std::vector<Resource> res, Kingdom* k, int r, int c)
+        : resources(res), kingdom(k), row(r), col(c) {}
 
-        std::vector<Resource> getResources() const { return resources; }
-        Kingdom* getKingdom() const { return kingdom; }
-        int getRow() const { return row; }
-        int getCol() const { return col; }
-        
-
-    private:
-        std::vector<Resource> resources;
-        Kingdom* kingdom;
-        int row;
-        int col;
-    };
+    std::vector<Resource> getResources() const { return resources; }
+    Kingdom* getKingdom() const { return kingdom; }
+    int getRow() const { return row; }
+    int getCol() const { return col; }
+    
+    // Function to check if the tile has treasure
+    bool hasTreasure() const {
+        return std::find(this->resources.begin(), this->resources.end(), Resource::Treasure) != this->resources.end();
+    }
+     // Fixed typo here
+    Kingdom* kingdom;
+    int row;
+    int col;
+};
 
     // Define class for the game board
     class Board {
