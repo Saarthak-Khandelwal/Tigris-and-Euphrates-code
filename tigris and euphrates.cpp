@@ -1,5 +1,3 @@
-// update monument points (monumentPoints) on line 407
-
 #include <iostream>
 #include <vector>
 #include <string>
@@ -54,7 +52,8 @@ public:
     {
         return std::find(this->resources.begin(), this->resources.end(), Resource::Treasure) != this->resources.end();
     }
-    // Fixed typo here
+
+private:
     Kingdom *kingdom;
     int row;
     int col;
@@ -64,7 +63,7 @@ public:
 class Board
 {
 public:
-    Board(int rows, int cols) : numRows(rows), numCols(cols)
+    Board(int rows, int cols, Kingdom *red, Kingdom *blue) : numRows(rows), numCols(cols), redKingdom(red), blueKingdom(blue)
     {
         tiles.resize(numRows, std::vector<Tile *>(numCols, nullptr));
     }
@@ -85,19 +84,79 @@ public:
         return true;
     }
 
+    // Function to print the board
+    void printBoard() const
+    {
+        for (int i = 0; i < numRows; ++i)
+        {
+            for (int j = 0; j < numCols; ++j)
+            {
+                if (tiles[i][j] != nullptr)
+                {
+                    std::cout << "[" << getResourceSymbol(tiles[i][j]) << "]";
+                }
+                else
+                {
+                    std::cout << "[ ]";
+                }
+            }
+            std::cout << std::endl;
+        }
+    }
+
     std::vector<std::vector<Tile *>> getTiles() const { return tiles; }
 
 private:
     int numRows;
     int numCols;
     std::vector<std::vector<Tile *>> tiles;
+    Kingdom *redKingdom;
+    Kingdom *blueKingdom;
+
+    // Function to get the symbol representation of a resource
+    char getResourceSymbol(Tile *tile) const
+    {
+        if (tile->hasTreasure())
+        {
+            return 'T'; // Symbol for treasure
+        }
+        else
+        {
+            // Check if the tile represents Red or Blue kingdom
+            if (tile->getKingdom() == redKingdom)
+            {
+                return 'R'; // Symbol for Red kingdom
+            }
+            else if (tile->getKingdom() == blueKingdom)
+            {
+                return 'B'; // Symbol for Blue kingdom
+            }
+            else
+            {
+                // Get the first letter of the resource for monuments
+                switch (tile->getResources()[0])
+                {
+                case Resource::Temple:
+                    return 'T';
+                case Resource::Market:
+                    return 'M';
+                case Resource::Farm:
+                    return 'F';
+                case Resource::Settlement:
+                    return 'S';
+                default:
+                    return ' ';
+                }
+            }
+        }
+    }
 };
 
 // Define class for a player
 class Player
 {
 public:
-    Player(std::string n) : name(n), score(0) {}
+    Player(std::string n, Kingdom *k) : name(n), kingdom(k), score(0) {}
 
     void addToScore(int points)
     {
@@ -120,6 +179,7 @@ public:
 
 private:
     std::string name;
+    Kingdom *kingdom;
     int score;
     std::vector<Tile *> hand;
 };
@@ -128,15 +188,19 @@ private:
 class Game
 {
 public:
-    Game() : board(16, 11), currentPlayerIndex(0)
+    Game() : board(16, 11, redKingdom, blueKingdom), currentPlayerIndex(0)
     {
         // Seed the random number generator for treasure selection
         srand(time(nullptr));
 
-        players.push_back(Player("Player 1"));
-        players.push_back(Player("Player 2"));
         redKingdom = new Kingdom("Red");
         blueKingdom = new Kingdom("Blue");
+
+        players.push_back(Player("Player 1", redKingdom));
+        players.push_back(Player("Player 2", blueKingdom));
+
+        // Initialize the tile bag
+        initializeTileBag();
     }
 
     ~Game()
@@ -156,10 +220,18 @@ public:
             for (int i = 0; i < 2; ++i)
             {
                 placeTile(currentPlayer);
+                board.printBoard();
             }
 
             // Draw tiles to replenish player's hand
             drawTiles(currentPlayer);
+
+            // Display scores after every move
+            std::cout << "Scores after " << currentPlayer.getName() << "'s move:\n";
+            for (const auto &player : players)
+            {
+                std::cout << player.getName() << ": " << player.getScore() << std::endl;
+            }
 
             currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
         }
@@ -170,6 +242,11 @@ public:
         {
             std::cout << player.getName() << ": " << player.getScore() << std::endl;
         }
+    }
+
+    void printBoard() const
+    {
+        board.printBoard();
     }
 
 private:
@@ -187,6 +264,7 @@ private:
         {
             // Create tiles and add them to tileBag
             tileBag.push_back(new Tile({Resource::Temple}, redKingdom, 0, 0));
+            tileBag.push_back(new Tile({Resource::Temple}, blueKingdom, 0, 0));
         }
     }
 
@@ -428,6 +506,9 @@ private:
                 // Update the tile(s) on the board to represent the settlement monument
                 placedTile->resources.push_back(Resource::Settlement);
             }
+
+            // Print the first letter of the monument type
+            std::cout << "Monument created: " << static_cast<char>(input[0]) << std::endl;
         }
     }
 
@@ -464,5 +545,18 @@ int main()
 {
     Game game;
     game.play();
+
+    // Simple simulation for gameplay
+    // For demonstration purposes, let's assume the game ends after a few turns
+    std::cout << "Starting a simple simulation...\n";
+
+    for (int i = 0; i < 10; ++i)
+    {
+        std::cout << "\nTurn " << i + 1 << ":\n";
+        game.printBoard(); // Print the board state
+        game.play();             // Play a turn
+    }
+
+    std::cout << "\nEnd of simulation.\n";
     return 0;
 }
